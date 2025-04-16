@@ -14,6 +14,8 @@
         height: 500px;
         width: 100%;
         margin-top: 10px;
+        border: 2px solid #555;
+        border-radius: 8px;
       }
       .controls {
         margin-bottom: 10px;
@@ -29,6 +31,10 @@
       }
       .results {
         margin-top: 10px;
+      }
+      .gm-control-active {
+        box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        background-color: #fefefe;
       }
     </style>
   </head>
@@ -50,10 +56,10 @@
 
       function initMap() {
         map = new google.maps.Map(document.getElementById("map"), {
-          center: { lat: 32.7157, lng: -117.1611 }, // San Diego
-          zoom: 17,
+          center: { lat: 32.7157, lng: -117.1611 },
+          zoom: 16,
           tilt: 0,
-          mapTypeId: "satellite",
+          mapTypeId: "hybrid", // shows satellite with labels
           mapTypeControl: false,
           gestureHandling: "greedy"
         });
@@ -63,7 +69,7 @@
           const place = autocomplete.getPlace();
           if (place.geometry) {
             map.setCenter(place.geometry.location);
-            map.setZoom(20);
+            map.setZoom(18);
           }
         });
 
@@ -75,14 +81,17 @@
             drawingModes: ["polygon"]
           },
           polygonOptions: {
-            fillColor: "#ff0000",
+            fillColor: "#33AAFF",
             fillOpacity: 0.4,
+            strokeColor: "#0077CC",
             strokeWeight: 2,
-            clickable: false,
-            editable: false,
+            clickable: true,
+            editable: true, // Make polygon editable after drawing
+            draggable: false,
             zIndex: 1
           }
         });
+
         drawingManager.setMap(map);
 
         google.maps.event.addListener(drawingManager, "overlaycomplete", function (event) {
@@ -91,31 +100,27 @@
               polygon.setMap(null);
             }
             polygon = event.overlay;
+            polygon.setEditable(true); // Ensure it stays editable
 
-            const path = polygon.getPath();
-            const areaMeters = google.maps.geometry.spherical.computeArea(path);
-            const areaFeet = areaMeters * 10.7639;
-
-            document.getElementById("area").textContent = areaFeet.toFixed(2);
-
-            const rainfall = parseFloat(document.getElementById("rainfall").value || 0);
-            const gallons = areaFeet * 0.623 * rainfall;
-            document.getElementById("gallons").textContent = gallons.toFixed(2);
+            calculateAreaAndGallons();
+            google.maps.event.addListener(polygon.getPath(), "set_at", calculateAreaAndGallons);
+            google.maps.event.addListener(polygon.getPath(), "insert_at", calculateAreaAndGallons);
           }
         });
 
-        document.getElementById("rainfall").addEventListener("input", () => {
-          if (polygon) {
-            const path = polygon.getPath();
-            const areaMeters = google.maps.geometry.spherical.computeArea(path);
-            const areaFeet = areaMeters * 10.7639;
-            document.getElementById("area").textContent = areaFeet.toFixed(2);
+        document.getElementById("rainfall").addEventListener("input", calculateAreaAndGallons);
 
-            const rainfall = parseFloat(document.getElementById("rainfall").value || 0);
-            const gallons = areaFeet * 0.623 * rainfall;
-            document.getElementById("gallons").textContent = gallons.toFixed(2);
-          }
-        });
+        function calculateAreaAndGallons() {
+          if (!polygon) return;
+          const path = polygon.getPath();
+          const areaMeters = google.maps.geometry.spherical.computeArea(path);
+          const areaFeet = areaMeters * 10.7639;
+          document.getElementById("area").textContent = areaFeet.toFixed(2);
+
+          const rainfall = parseFloat(document.getElementById("rainfall").value || 0);
+          const gallons = areaFeet * 0.623 * rainfall;
+          document.getElementById("gallons").textContent = gallons.toFixed(2);
+        }
       }
     </script>
 
