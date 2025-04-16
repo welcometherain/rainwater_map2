@@ -164,10 +164,7 @@
                 const polygon = event.overlay;
                 polygon.setEditable(true);
                 polygon.label = prompt("Label this area (e.g., Roof, Driveway):") || 'Unnamed';
-                const areaMeters = google.maps.geometry.spherical.computeArea(polygon.getPath());
-                const areaFeet = areaMeters * 10.7639;
-                polygons.push({ polygon, areaFeet });
-
+                polygons.push({ polygon });
                 polygon.addListener('click', () => {
                     const newLabel = prompt('Rename this area:', polygon.label);
                     if (newLabel) polygon.label = newLabel;
@@ -188,7 +185,10 @@
         const resultsDiv = document.getElementById('rainfall-results');
         resultsDiv.innerHTML = '';  // Reset previous results
 
-        polygons.forEach(({ polygon, areaFeet }) => {
+        polygons.forEach(({ polygon }) => {
+            // Recalculate the area each time the button is clicked
+            const areaMeters = google.maps.geometry.spherical.computeArea(polygon.getPath());
+            const areaFeet = areaMeters * 10.7639;
             const gallonsPerInch = areaFeet * 0.623;
             const totalGallons = gallonsPerInch * rainfallVal;
 
