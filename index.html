@@ -62,11 +62,7 @@
   <!-- Google Mutant plugin -->
   <script src="https://unpkg.com/leaflet.gridlayer.googlemutant@0.11.2/Leaflet.GoogleMutant.js"></script>
   <!-- Load Google Maps API -->
-  <script
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAuFONHLyXGalqEH9VL3oFl8MpHgF7sa5k&libraries=places"
-    async
-    defer
-  ></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAuFONHLyXGalqEH9VL3oFl8MpHgF7sa5k&libraries=places" async defer></script>
 
   <script>
     let map;
@@ -78,11 +74,11 @@
       map = L.map("map", {
         center: [32.7157, -117.1611], // Default to San Diego
         zoom: 17,
-        maxZoom: 23
+        maxZoom: 21  // Set a reasonable max zoom level
       });
 
       const googleLayer = L.gridLayer.googleMutant({
-        maxZoom: 23,
+        maxZoom: 21,
         type: "satellite"
       }).addTo(map);
 
