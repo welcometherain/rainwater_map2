@@ -1,150 +1,171 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <title>Rainwater Harvesting Map</title>
-  <meta charset="utf-8">
-  <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
-  <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-      font-family: 'Quattrocento Sans', sans-serif;
-    }
-    #map {
-      height: 80%;
-    }
-    #controls {
-      background-color: #34495e;
-      color: white;
-      padding: 1rem;
-    }
-    #controls h2 {
-      margin-top: 0;
-    }
-    #polygonList {
-      margin-top: 1rem;
-    }
-    .btn {
-      background-color: #EC1E7D;
-      color: white;
-      padding: 0.5rem 1rem;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 1rem;
-    }
-    .btn:hover {
-      opacity: 0.9;
-    }
-  </style>
-</head>
-<body>
-  <div id="controls">
-    <h2>How to Use This Tool</h2>
-    <ol>
-      <li>Find your property using the address search box or scroll to your location on the map</li>
-      <li>Draw polygons on the map to represent areas that you would like to calculate rainfall runoff (This can be a house, driveway, or the land itself)</li>
-      <li>Label each polygon with a description (e.g., 'Roof', 'Driveway')</li>
-      <li>Edit polygon shape, name, or color by using the <span style="font-size:1.2em;">✋</span> tool and clicking on the polygon</li>
-      <li>Enter annual rainfall in inches to calculate rainwater potential for each area drawn</li>
-    </ol>
-    <label for="rainfall">Annual Rainfall (inches):</label>
-    <input type="number" id="rainfall" placeholder="e.g. 15">
-    <button class="btn" onclick="calculateRainwater()">Calculate</button>
-    <div id="polygonList"></div>
-  </div>
-  <div id="map"></div>
+  <head>
+    <title>Rainwater Harvesting Calculator</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: 'Quattrocento Sans', sans-serif;
+        margin: 0;
+        padding: 0;
+      }
+      #instructions {
+        background-color: #34495e;
+        color: white;
+        padding: 20px;
+        font-size: 16px;
+      }
+      #instructions h2 {
+        margin-top: 0;
+        font-size: 24px;
+      }
+      #controls {
+        display: flex;
+        gap: 10px;
+        padding: 10px;
+        background: #eee;
+        align-items: center;
+      }
+      #map {
+        height: 70vh;
+        width: 100%;
+      }
+      .btn {
+        background-color: #EC1E7D;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      .info {
+        padding: 10px;
+      }
+    </style>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Quattrocento+Sans&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="instructions">
+      <h2>How to Use This Tool</h2>
+      <ol>
+        <li>Find your property using the address search box or scroll to your location on the map.</li>
+        <li>Draw polygons on the map to represent areas that you would like to calculate rainfall runoff (This can be a house, driveway, or the land itself).</li>
+        <li>Label each polygon with a description (e.g., 'Roof', 'Driveway').</li>
+        <li>Edit polygon shape, name, or color by using the <span style="font-size: 1.2em;">✋</span> tool and clicking on the polygon.</li>
+        <li>Enter annual rainfall in inches to calculate rainwater potential for each area drawn.</li>
+      </ol>
+    </div>
 
-  <script>
-    let map;
-    let drawingManager;
-    let polygons = [];
-    let selectedPolygon = null;
+    <div id="controls">
+      <input type="text" id="address" placeholder="Enter an address" size="40" />
+      <input type="number" id="rainfall" placeholder="Annual Rainfall (inches)" />
+      <button class="btn" onclick="calculateRainwater()">Calculate</button>
+    </div>
 
-    function initMap() {
-      map = new google.maps.Map(document.getElementById("map"), {
-        center: { lat: 34.0522, lng: -118.2437 }, // Los Angeles
-        zoom: 8,
-        mapTypeId: 'hybrid',
-        tilt: 0,
-        gestureHandling: "greedy"
-      });
+    <div id="map"></div>
+    <div class="info" id="results"></div>
 
-      drawingManager = new google.maps.drawing.DrawingManager({
-        drawingMode: google.maps.drawing.OverlayType.POLYGON,
-        drawingControl: true,
-        drawingControlOptions: {
-          position: google.maps.ControlPosition.TOP_CENTER,
-          drawingModes: [google.maps.drawing.OverlayType.POLYGON]
-        },
-        polygonOptions: {
-          editable: true,
-          fillColor: '#3498db',
-          strokeColor: '#3498db',
-          strokeWeight: 2,
-        }
-      });
-      drawingManager.setMap(map);
+    <script>
+      let map;
+      let drawingManager;
+      let polygons = [];
+      let infoWindow;
 
-      google.maps.event.addListener(drawingManager, 'overlaycomplete', function(event) {
-        const polygon = event.overlay;
-        polygon.setEditable(true);
-        polygon.setOptions({ fillColor: '#3498db', strokeColor: '#3498db' });
-
-        const label = prompt("Enter a label for this area:");
-        const area = google.maps.geometry.spherical.computeArea(polygon.getPath());
-
-        const polyData = {
-          polygon,
-          label: label || 'Unnamed Area',
-          area
-        };
-
-        polygons.push(polyData);
-        updatePolygonList();
-
-        google.maps.event.addListener(polygon, 'click', () => {
-          if (drawingManager.getDrawingMode()) return;
-          const newLabel = prompt("Edit label:", polyData.label);
-          if (newLabel !== null) {
-            polyData.label = newLabel;
-            updatePolygonList();
-          }
+      function initMap() {
+        map = new google.maps.Map(document.getElementById("map"), {
+          center: { lat: 34, lng: -118 }, // SoCal
+          zoom: 8,
+          mapTypeId: "hybrid",
+          streetViewControl: false,
         });
-      });
-    }
 
-    function updatePolygonList() {
-      const listDiv = document.getElementById("polygonList");
-      listDiv.innerHTML = "";
-      polygons.forEach((poly, index) => {
-        const areaRounded = Math.round(poly.area).toLocaleString();
-        const div = document.createElement("div");
-        div.innerHTML = `<strong>${poly.label}</strong>: ${areaRounded} sq ft`;
-        listDiv.appendChild(div);
-      });
-    }
+        const input = document.getElementById("address");
+        const searchBox = new google.maps.places.SearchBox(input);
+        map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
 
-    function calculateRainwater() {
-      const rainfall = parseFloat(document.getElementById("rainfall").value);
-      if (isNaN(rainfall)) {
-        alert("Please enter a valid rainfall amount.");
-        return;
+        map.addListener("bounds_changed", () => {
+          searchBox.setBounds(map.getBounds());
+        });
+
+        searchBox.addListener("places_changed", () => {
+          const places = searchBox.getPlaces();
+          if (places.length === 0) return;
+          const bounds = new google.maps.LatLngBounds();
+          places.forEach((place) => {
+            if (!place.geometry || !place.geometry.location) return;
+            bounds.extend(place.geometry.location);
+          });
+          map.fitBounds(bounds);
+        });
+
+        infoWindow = new google.maps.InfoWindow();
+
+        drawingManager = new google.maps.drawing.DrawingManager({
+          drawingMode: google.maps.drawing.OverlayType.POLYGON,
+          drawingControl: true,
+          drawingControlOptions: {
+            position: google.maps.ControlPosition.TOP_CENTER,
+            drawingModes: [google.maps.drawing.OverlayType.POLYGON],
+          },
+          polygonOptions: {
+            fillColor: "#007BFF",
+            fillOpacity: 0.4,
+            strokeWeight: 2,
+            editable: true,
+            draggable: false,
+          },
+        });
+        drawingManager.setMap(map);
+
+        google.maps.event.addListener(
+          drawingManager,
+          "overlaycomplete",
+          (event) => {
+            const polygon = event.overlay;
+            polygon.type = event.type;
+            const label = prompt("Label this area (e.g., Roof, Driveway):");
+            polygon.label = label || "Unnamed Area";
+            polygon.setEditable(true);
+            polygons.push(polygon);
+
+            google.maps.event.addListener(polygon, "click", () => {
+              const newLabel = prompt("Rename this area:", polygon.label);
+              if (newLabel !== null) polygon.label = newLabel;
+            });
+          }
+        );
       }
 
-      const listDiv = document.getElementById("polygonList");
-      listDiv.innerHTML = "";
-      polygons.forEach((poly) => {
-        const gallons = poly.area * rainfall * 0.623;
-        const gallonsRounded = Math.round(gallons).toLocaleString();
-        const areaRounded = Math.round(poly.area).toLocaleString();
-        const div = document.createElement("div");
-        div.innerHTML = `<strong>${poly.label}</strong>: ${areaRounded} sq ft → <strong>${gallonsRounded} gallons</strong>`;
-        listDiv.appendChild(div);
-      });
-    }
-  </script>
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAuFONHLyXGalqEH9VL3oFl8MpHgF7sa5k&libraries=drawing,geometry&callback=initMap" async defer></script>
-</body>
+      function calculateRainwater() {
+        const rainfall = parseFloat(document.getElementById("rainfall").value);
+        if (isNaN(rainfall)) {
+          alert("Please enter a valid rainfall amount.");
+          return;
+        }
+
+        let output = "<h3>Rainwater Potential</h3><ul>";
+        polygons.forEach((poly) => {
+          const area = google.maps.geometry.spherical.computeArea(poly.getPath());
+          const gallons = Math.round(area * rainfall * 0.623); // 0.623 gallons/inch/sq ft
+          output += `<li><strong>${poly.label}:</strong> ${Math.round(area).toLocaleString()} sq ft → ${gallons.toLocaleString()} gallons/year</li>`;
+        });
+        output += "</ul>";
+
+        document.getElementById("results").innerHTML = output;
+      }
+    </script>
+
+    <script
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAuFONHLyXGalqEH9VL3oFl8MpHgF7sa5k&libraries=places,drawing,geometry&callback=initMap"
+      async
+      defer
+    ></script>
+  </body>
 </html>
+
 
