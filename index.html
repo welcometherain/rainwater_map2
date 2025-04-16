@@ -47,7 +47,7 @@
       }
 
       .instructions button {
-        background-color: #EC1E7D;
+        background-color: #EC1E7D; /* Fixed button color */
         color: white;
         padding: 10px 20px;
         border: none;
@@ -113,7 +113,8 @@
     <script>
       let map, drawingManager;
       const polygons = [];
-      let selectedColor = '#FF5733'; // Default color
+      const defaultColor = '#0000FF'; // Default polygon color set to blue
+      let selectedColor = defaultColor; // Set selected color to default blue
       let autocomplete;
 
       function initMap() {
