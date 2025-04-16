@@ -11,12 +11,14 @@
         font-family: 'Quattrocento Sans', sans-serif; /* Apply Quattrocento Sans font */
         padding: 20px;
         margin: 0;
+        background-color: #f4f4f4;
       }
       #map {
         height: 500px;
         width: 100%;
         margin: 20px 0;
       }
+
       .controls {
         display: flex;
         flex-wrap: wrap;
@@ -29,9 +31,34 @@
         padding: 8px;
         font-size: 16px;
       }
+
+      .instructions {
+        background-color: #34495E;
+        color: white;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        font-size: 18px;
+      }
+
+      .instructions button {
+        background-color: #EC1E7D;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        cursor: pointer;
+        border-radius: 5px;
+        font-size: 16px;
+      }
+
+      .instructions button:hover {
+        background-color: #C81B6F;
+      }
+
       .color-picker {
         display: flex;
         gap: 10px;
+        margin-top: 10px;
       }
       .color-picker div {
         width: 30px;
@@ -39,9 +66,11 @@
         cursor: pointer;
         border-radius: 5px;
       }
+
       .results {
         margin-top: 20px;
       }
+
       .results p {
         margin: 5px 0;
       }
@@ -50,18 +79,19 @@
   <body>
     <h2>Rainwater Harvesting Calculator</h2>
 
+    <!-- Directions Box -->
+    <div class="instructions">
+      <p>1. Draw polygons on the map to represent areas like the roof, driveway, etc.</p>
+      <p>2. Label each polygon with a description (e.g., 'Roof', 'Driveway').</p>
+      <p>3. After labeling, select a color for each polygon to help differentiate them.</p>
+      <p>4. Enter annual rainfall in inches to calculate rainwater potential for each area.</p>
+      <button id="showInstructions" onclick="showInstructions()">Show Instructions</button>
+    </div>
+
     <div class="controls">
       <input id="address" type="text" placeholder="Enter address" />
       <input id="rainfall" type="number" placeholder="Annual Rainfall (inches)" />
       <button id="calculate">Calculate</button>
-    </div>
-
-    <div class="color-picker">
-      <div style="background-color: #FF5733;" onclick="setPolygonColor('#FF5733')"></div>
-      <div style="background-color: #33C1FF;" onclick="setPolygonColor('#33C1FF')"></div>
-      <div style="background-color: #75FF33;" onclick="setPolygonColor('#75FF33')"></div>
-      <div style="background-color: #FF33F6;" onclick="setPolygonColor('#FF33F6')"></div>
-      <div style="background-color: #FFC733;" onclick="setPolygonColor('#FFC733')"></div>
     </div>
 
     <div id="map"></div>
@@ -69,7 +99,7 @@
     <div class="results" id="results"></div>
 
     <script
-      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAuFONHLyXGalqEH9VL3oFl8MpHgF7sa5k&libraries=places,drawing&callback=initMap"
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAuFONHLyXGalqEH9VL3oFl8MpHgF7sa5k&libraries=places,drawing,geometry&callback=initMap"
       async
       defer
     ></script>
@@ -175,6 +205,7 @@
             <strong>${polygon.label}</strong><br/>
             <button onclick="renamePolygon(${polygons.indexOf(polygon)})">Rename</button>
             <button onclick="deletePolygon(${polygons.indexOf(polygon)})">Delete</button>
+            <button onclick="pickPolygonColor(${polygons.indexOf(polygon)})">Change Color</button>
           </div>
         `;
       }
@@ -192,10 +223,21 @@
         calculateRainwater();
       }
 
-      function setPolygonColor(color) {
-        selectedColor = color;
-        alert(`Polygon color set to: ${color}`);
+      function pickPolygonColor(index) {
+        const color = prompt("Enter a new color hex (e.g., #FF5733):", "#FF5733");
+        if (color) {
+          polygons[index].setOptions({
+            strokeColor: color,
+            fillColor: color
+          });
+          polygons[index].color = color;
+        }
+      }
+
+      function showInstructions() {
+        alert("Instructions: Draw and label polygons. Then select a color and enter rainfall data.");
       }
     </script>
   </body>
 </html>
+
