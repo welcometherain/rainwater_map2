@@ -41,6 +41,11 @@
         font-size: 18px;
       }
 
+      .instructions h3 {
+        font-size: 24px;
+        margin-bottom: 15px;
+      }
+
       .instructions button {
         background-color: #EC1E7D;
         color: white;
@@ -59,7 +64,13 @@
         display: flex;
         gap: 10px;
         margin-top: 10px;
+        position: absolute;
+        z-index: 100;
+        padding: 10px;
+        border-radius: 8px;
+        background-color: #fff;
       }
+
       .color-picker div {
         width: 30px;
         height: 30px;
@@ -81,10 +92,11 @@
 
     <!-- Directions Box -->
     <div class="instructions">
+      <h3>How to Use This Tool</h3>
       <p>1. Find your property using the address search box or scroll to your location on the map.</p>
       <p>2. Draw polygons on the map to represent areas that you would like to calculate rainfall runoff (This can be a house, driveway, or the land itself).</p>
       <p>3. Label each polygon with a description (e.g., 'Roof', 'Driveway').</p>
-      <p>4. After labeling, select a color for each polygon to help differentiate them.</p>
+      <p>4. Edit polygon shape, name, or color by using the hand tool and clicking on the polygon.</p>
       <p>5. Enter annual rainfall in inches to calculate rainwater potential for each area drawn.</p>
     </div>
 
@@ -112,7 +124,6 @@
 
       function initMap() {
         map = new google.maps.Map(document.getElementById("map"), {
-          // Set the map center to Southern California (Los Angeles area)
           center: { lat: 34.0522, lng: -118.2437 }, // Los Angeles, CA
           zoom: 8, // Adjusted zoom level to see a broader view of Southern California
           mapTypeId: "hybrid",
@@ -251,3 +262,4 @@
     </script>
   </body>
 </html>
+``
