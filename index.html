@@ -45,8 +45,8 @@
     <p>Potential Annual Rainwater Harvesting (gallons): <span id="gallons">0</span></p>
   </div>
 
-  <!-- Load Google Maps API -->
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAuFONHLyXGalqEH9VL3oFl8MpHgF7sa5k&libraries=places,drawing" async defer></script>
+  <!-- Load Google Maps API with Places and Drawing library -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAuFONHLyXGalqEH9VL3oFl8MpHgF7sa5k&libraries=places,drawing&callback=initMap" async defer></script>
 
   <script>
     let map;
@@ -56,13 +56,13 @@
 
     // Initialize the map
     function initMap() {
-      // Default to San Diego location
+      // Default location: San Diego
       map = new google.maps.Map(document.getElementById("map"), {
         center: { lat: 32.7157, lng: -117.1611 },
         zoom: 17,
       });
 
-      // Initialize drawing manager
+      // Initialize the drawing manager
       drawingManager = new google.maps.drawing.DrawingManager({
         drawingMode: google.maps.drawing.OverlayType.POLYGON,
         polygonOptions: {
@@ -74,23 +74,24 @@
         map: map,
       });
 
+      // Set up event listener for the drawing manager to capture drawn shapes
       google.maps.event.addListener(drawingManager, "overlaycomplete", function (e) {
-        // If there's an existing shape, remove it
+        // Remove any existing shapes
         if (drawnShape) {
           drawnShape.setMap(null);
         }
-        // Save the newly drawn shape
+        // Store the newly drawn shape
         drawnShape = e.overlay;
         drawnShape.setMap(map);
       });
 
-      // Set up Google Places Autocomplete for the address input
+      // Google Places Autocomplete for address search
       const input = document.getElementById("address");
       autocomplete = new google.maps.places.Autocomplete(input);
       autocomplete.addListener("place_changed", onPlaceChanged);
     }
 
-    // Handler for when an address is selected
+    // Place changed handler for autocomplete
     function onPlaceChanged() {
       const place = autocomplete.getPlace();
       if (!place.geometry) {
@@ -117,9 +118,9 @@
         return;
       }
 
-      // Get the area of the drawn polygon
+      // Calculate the area of the drawn shape
       const area = google.maps.geometry.spherical.computeArea(drawnShape.getPath());
-      const areaFeet = area * 10.7639; // Convert square meters to square feet
+      const areaFeet = area * 10.7639; // Convert from square meters to square feet
 
       const gallonsPerInch = areaFeet * 0.623; // 0.623 gallons per square foot per inch
       const totalGallons = gallonsPerInch * rainfall;
@@ -130,9 +131,6 @@
 
     // Event listener for the calculate button
     document.getElementById("calculate").addEventListener("click", calculateRainwater);
-
-    // Initialize the map when the API is loaded
-    window.initMap = initMap;
   </script>
 </body>
 </html>
