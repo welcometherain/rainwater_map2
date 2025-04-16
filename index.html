@@ -72,13 +72,6 @@
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.3); /* Add some shadow for clarity */
       }
 
-      .color-picker div {
-        width: 30px;
-        height: 30px;
-        cursor: pointer;
-        border-radius: 5px;
-      }
-
       .results {
         margin-top: 20px;
       }
@@ -173,7 +166,6 @@
           const polygon = event.overlay;
           polygon.type = "polygon";
           polygon.label = prompt("Label this area (e.g., 'Roof', 'Driveway')") || "Unnamed";
-          polygon.color = selectedColor;
           polygon.setOptions({ fillColor: polygon.color, strokeColor: polygon.color });
 
           const infoWindow = new google.maps.InfoWindow({
@@ -227,7 +219,6 @@
             <strong>${polygon.label}</strong><br/>
             <button onclick="renamePolygon(${polygons.indexOf(polygon)})">Rename</button>
             <button onclick="deletePolygon(${polygons.indexOf(polygon)})">Delete</button>
-            <button onclick="pickPolygonColor(${polygons.indexOf(polygon)})">Change Color</button>
           </div>
         `;
       }
@@ -243,32 +234,6 @@
         polygons[index].setMap(null);
         polygons.splice(index, 1);
         calculateRainwater();
-      }
-
-      function pickPolygonColor(index) {
-        const colorChoices = ['#FF5733', '#33FF57', '#5733FF', '#F1C40F', '#EC1E7D'];
-        const colorPicker = document.createElement('div');
-        colorChoices.forEach(color => {
-          const colorBox = document.createElement('div');
-          colorBox.style.backgroundColor = color;
-          colorBox.style.width = '30px';
-          colorBox.style.height = '30px';
-          colorBox.style.cursor = 'pointer';
-          colorBox.style.borderRadius = '5px';
-          colorBox.addEventListener('click', () => {
-            polygons[index].color = color;
-            polygons[index].setOptions({
-              fillColor: color,
-              strokeColor: color
-            });
-            document.body.removeChild(colorPicker);
-          });
-          colorPicker.appendChild(colorBox);
-        });
-
-        document.body.appendChild(colorPicker);
-        colorPicker.style.top = event.clientY + 'px';
-        colorPicker.style.left = event.clientX + 'px';
       }
 
     </script>
