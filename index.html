@@ -59,7 +59,7 @@
             background-color: #D1186C;
         }
         #map {
-            height: 70vh;
+            height: 500px;  /* Fixed height of 500px */
             width: 100%;
             margin-bottom: 20px;
         }
@@ -186,7 +186,7 @@
         }
 
         const resultsDiv = document.getElementById('rainfall-results');
-        resultsDiv.innerHTML = '';
+        resultsDiv.innerHTML = '';  // Reset previous results
 
         polygons.forEach(({ polygon, areaFeet }) => {
             const gallonsPerInch = areaFeet * 0.623;
@@ -199,7 +199,6 @@
                 <p>Area: ${Math.round(areaFeet).toLocaleString()} sq ft</p>
                 <p>Gallons per inch: <strong>${Math.round(gallonsPerInch).toLocaleString()}</strong></p>
                 <p>Gallons per year: <strong>${Math.round(totalGallons).toLocaleString()}</strong></p>
-                <p><a href="https://www.thepermaculturelab.com/greywater" target="_blank">Explore greywater reuse options</a></p>
             `;
             resultsDiv.appendChild(box);
         });
