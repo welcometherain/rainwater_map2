@@ -82,6 +82,7 @@
         .result-box h3 {
             margin-top: 0;
             color: #333;
+            font-weight: bold;
         }
         .result-box p {
             margin: 5px 0;
@@ -159,7 +160,6 @@
                 const polygon = event.overlay;
                 polygon.setEditable(true);
                 polygon.label = prompt("Label this area (e.g., Roof, Driveway):") || 'Unnamed';
-                // store area in sq ft for later
                 const areaMeters = google.maps.geometry.spherical.computeArea(polygon.getPath());
                 const areaFeet = areaMeters * 10.7639;
                 polygons.push({ polygon, areaFeet });
@@ -192,10 +192,10 @@
             const box = document.createElement('div');
             box.className = 'result-box';
             box.innerHTML = `
-                <h3>${polygon.label}</h3>
+                <h3><strong>${polygon.label}</strong></h3>
                 <p>Area: ${Math.round(areaFeet).toLocaleString()} sq ft</p>
-                <p>Gallons per inch: ${Math.round(gallonsPerInch).toLocaleString()}</p>
-                <p>Gallons per year: ${Math.round(totalGallons).toLocaleString()}</p>
+                <p>Gallons per inch: <strong>${Math.round(gallonsPerInch).toLocaleString()}</strong></p>
+                <p>Gallons per year: <strong>${Math.round(totalGallons).toLocaleString()}</strong></p>
             `;
             resultsDiv.appendChild(box);
         });
