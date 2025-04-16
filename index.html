@@ -81,11 +81,11 @@
 
     <!-- Directions Box -->
     <div class="instructions">
-      <p>1. Draw polygons on the map to represent areas like the roof, driveway, etc.</p>
-      <p>2. Label each polygon with a description (e.g., 'Roof', 'Driveway').</p>
-      <p>3. After labeling, select a color for each polygon to help differentiate them.</p>
-      <p>4. Enter annual rainfall in inches to calculate rainwater potential for each area.</p>
-      <button id="showInstructions" onclick="showInstructions()">Show Instructions</button>
+      <p>1. Find your property using the address search box or scroll to your location on the map.</p>
+      <p>2. Draw polygons on the map to represent areas that you would like to calculate rainfall runoff (This can be a house, driveway, or the land itself).</p>
+      <p>3. Label each polygon with a description (e.g., 'Roof', 'Driveway').</p>
+      <p>4. After labeling, select a color for each polygon to help differentiate them.</p>
+      <p>5. Enter annual rainfall in inches to calculate rainwater potential for each area drawn.</p>
     </div>
 
     <div class="controls">
@@ -224,20 +224,30 @@
       }
 
       function pickPolygonColor(index) {
-        const color = prompt("Enter a new color hex (e.g., #FF5733):", "#FF5733");
-        if (color) {
-          polygons[index].setOptions({
-            strokeColor: color,
-            fillColor: color
+        const colorChoices = ['#FF5733', '#33FF57', '#5733FF', '#F1C40F', '#EC1E7D'];
+        const colorPicker = document.createElement('div');
+        colorChoices.forEach(color => {
+          const colorBox = document.createElement('div');
+          colorBox.style.backgroundColor = color;
+          colorBox.style.width = '30px';
+          colorBox.style.height = '30px';
+          colorBox.style.cursor = 'pointer';
+          colorBox.style.borderRadius = '5px';
+          colorBox.addEventListener('click', () => {
+            polygons[index].setOptions({
+              strokeColor: color,
+              fillColor: color
+            });
+            polygons[index].color = color;
           });
-          polygons[index].color = color;
-        }
-      }
-
-      function showInstructions() {
-        alert("Instructions: Draw and label polygons. Then select a color and enter rainfall data.");
+          colorPicker.appendChild(colorBox);
+        });
+        const infoWindow = new google.maps.InfoWindow({
+          content: colorPicker,
+          position: polygons[index].getPath().getAt(0),
+        });
+        infoWindow.open(map);
       }
     </script>
   </body>
 </html>
-
