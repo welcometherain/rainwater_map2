@@ -1,137 +1,130 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="utf-8" />
-  <title>Rainwater Harvesting Calculator</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 20px;
-    }
-    #map {
-      height: 500px;
-      width: 100%;
-      margin-top: 10px;
-    }
-    .controls {
-      margin-bottom: 10px;
-    }
-    .controls input {
-      padding: 8px;
-      margin-right: 10px;
-      width: 250px;
-      max-width: 100%;
-    }
-    .controls button {
-      padding: 8px 16px;
-    }
-    .results {
-      margin-top: 10px;
-    }
-  </style>
-</head>
-<body>
-  <h2>Rainwater Harvesting Calculator</h2>
-  <div class="controls">
-    <input id="address" type="text" placeholder="Enter an address" />
-    <input id="rainfall" type="number" placeholder="Annual Rainfall (in inches)" />
-    <button id="calculate">Calculate</button>
-  </div>
-  <div id="map"></div>
-  <div class="results">
-    <p>Area (square feet): <span id="area">0</span></p>
-    <p>Potential Annual Rainwater Harvesting (gallons): <span id="gallons">0</span></p>
-  </div>
-
-  <!-- Load Google Maps API with Places and Drawing library -->
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAuFONHLyXGalqEH9VL3oFl8MpHgF7sa5k&libraries=places,drawing&callback=initMap" async defer></script>
-
-  <script>
-    let map;
-    let drawingManager;
-    let drawnShape;
-    let autocomplete;
-
-    // Initialize the map
-    function initMap() {
-      // Default location: San Diego
-      map = new google.maps.Map(document.getElementById("map"), {
-        center: { lat: 32.7157, lng: -117.1611 },
-        zoom: 17,
-      });
-
-      // Initialize the drawing manager
-      drawingManager = new google.maps.drawing.DrawingManager({
-        drawingMode: google.maps.drawing.OverlayType.POLYGON,
-        polygonOptions: {
-          fillColor: "#FF0000",
-          fillOpacity: 0.2,
-          strokeColor: "#FF0000",
-          strokeWeight: 2,
-        },
-        map: map,
-      });
-
-      // Set up event listener for the drawing manager to capture drawn shapes
-      google.maps.event.addListener(drawingManager, "overlaycomplete", function (e) {
-        // Remove any existing shapes
-        if (drawnShape) {
-          drawnShape.setMap(null);
-        }
-        // Store the newly drawn shape
-        drawnShape = e.overlay;
-        drawnShape.setMap(map);
-      });
-
-      // Google Places Autocomplete for address search
-      const input = document.getElementById("address");
-      autocomplete = new google.maps.places.Autocomplete(input);
-      autocomplete.addListener("place_changed", onPlaceChanged);
-    }
-
-    // Place changed handler for autocomplete
-    function onPlaceChanged() {
-      const place = autocomplete.getPlace();
-      if (!place.geometry) {
-        alert("No details available for input: '" + place.name + "'");
-        return;
+  <head>
+    <meta charset="utf-8" />
+    <title>Rainwater Harvesting Calculator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
       }
-
-      const location = place.geometry.location;
-      map.setCenter(location);
-      map.setZoom(17);
-    }
-
-    // Calculate rainwater harvesting potential
-    function calculateRainwater() {
-      const rainfallInput = document.getElementById("rainfall").value;
-      const rainfall = parseFloat(rainfallInput);
-      if (isNaN(rainfall) || rainfall <= 0) {
-        alert("Please enter a valid annual rainfall in inches.");
-        return;
+      #map {
+        height: 500px;
+        width: 100%;
+        margin-top: 10px;
       }
-
-      if (!drawnShape) {
-        alert("Please draw your roof area on the map.");
-        return;
+      .controls {
+        margin-bottom: 10px;
       }
+      .controls input {
+        padding: 8px;
+        margin-right: 10px;
+        width: 250px;
+        max-width: 100%;
+      }
+      .controls button {
+        padding: 8px 16px;
+      }
+      .results {
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Rainwater Harvesting Calculator</h2>
+    <div class="controls">
+      <input id="address" type="text" placeholder="Enter an address" />
+      <input id="rainfall" type="number" placeholder="Annual Rainfall (in inches)" />
+    </div>
+    <div id="map"></div>
+    <div class="results">
+      <p>Area (square feet): <span id="area">0</span></p>
+      <p>Potential Annual Rainwater Harvesting (gallons): <span id="gallons">0</span></p>
+    </div>
 
-      // Calculate the area of the drawn shape
-      const area = google.maps.geometry.spherical.computeArea(drawnShape.getPath());
-      const areaFeet = area * 10.7639; // Convert from square meters to square feet
+    <script>
+      let map;
+      let polygon;
 
-      const gallonsPerInch = areaFeet * 0.623; // 0.623 gallons per square foot per inch
-      const totalGallons = gallonsPerInch * rainfall;
+      function initMap() {
+        map = new google.maps.Map(document.getElementById("map"), {
+          center: { lat: 32.7157, lng: -117.1611 }, // San Diego
+          zoom: 17,
+          tilt: 0,
+          mapTypeId: "satellite",
+          mapTypeControl: false,
+          gestureHandling: "greedy"
+        });
 
-      document.getElementById("area").textContent = areaFeet.toFixed(2);
-      document.getElementById("gallons").textContent = totalGallons.toFixed(2);
-    }
+        const autocomplete = new google.maps.places.Autocomplete(document.getElementById("address"));
+        autocomplete.addListener("place_changed", () => {
+          const place = autocomplete.getPlace();
+          if (place.geometry) {
+            map.setCenter(place.geometry.location);
+            map.setZoom(20);
+          }
+        });
 
-    // Event listener for the calculate button
-    document.getElementById("calculate").addEventListener("click", calculateRainwater);
-  </script>
-</body>
+        const drawingManager = new google.maps.drawing.DrawingManager({
+          drawingMode: google.maps.drawing.OverlayType.POLYGON,
+          drawingControl: true,
+          drawingControlOptions: {
+            position: google.maps.ControlPosition.TOP_CENTER,
+            drawingModes: ["polygon"]
+          },
+          polygonOptions: {
+            fillColor: "#ff0000",
+            fillOpacity: 0.4,
+            strokeWeight: 2,
+            clickable: false,
+            editable: false,
+            zIndex: 1
+          }
+        });
+        drawingManager.setMap(map);
+
+        google.maps.event.addListener(drawingManager, "overlaycomplete", function (event) {
+          if (event.type === "polygon") {
+            if (polygon) {
+              polygon.setMap(null);
+            }
+            polygon = event.overlay;
+
+            const path = polygon.getPath();
+            const areaMeters = google.maps.geometry.spherical.computeArea(path);
+            const areaFeet = areaMeters * 10.7639;
+
+            document.getElementById("area").textContent = areaFeet.toFixed(2);
+
+            const rainfall = parseFloat(document.getElementById("rainfall").value || 0);
+            const gallons = areaFeet * 0.623 * rainfall;
+            document.getElementById("gallons").textContent = gallons.toFixed(2);
+          }
+        });
+
+        document.getElementById("rainfall").addEventListener("input", () => {
+          if (polygon) {
+            const path = polygon.getPath();
+            const areaMeters = google.maps.geometry.spherical.computeArea(path);
+            const areaFeet = areaMeters * 10.7639;
+            document.getElementById("area").textContent = areaFeet.toFixed(2);
+
+            const rainfall = parseFloat(document.getElementById("rainfall").value || 0);
+            const gallons = areaFeet * 0.623 * rainfall;
+            document.getElementById("gallons").textContent = gallons.toFixed(2);
+          }
+        });
+      }
+    </script>
+
+    <!-- Load Google Maps API -->
+    <script
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAuFONHLyXGalqEH9VL3oFl8MpHgF7sa5k&libraries=places,drawing,geometry&callback=initMap"
+      async
+      defer
+    ></script>
+  </body>
 </html>
 
