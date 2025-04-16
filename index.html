@@ -34,7 +34,26 @@
       border-radius: 8px;
     }
     .polygon-info {
-      margin-bottom: 8px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #eee;
+    }
+    .polygon-info:last-child {
+      border-bottom: none;
+    }
+    .polygon-actions {
+      margin-top: 5px;
+    }
+    .polygon-actions button {
+      margin-right: 5px;
+      background: #eee;
+      border: 1px solid #ccc;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .polygon-actions button:hover {
+      background: #ddd;
     }
     .total {
       font-weight: bold;
@@ -101,11 +120,19 @@
       google.maps.event.addListener(drawingManager, "overlaycomplete", function (event) {
         if (event.type === "polygon") {
           const label = prompt("Label this polygon (e.g., Roof, Driveway):", "Unnamed Area") || "Unnamed Area";
+          const color = prompt("Enter a hex color (e.g. #33AAFF):", "#33AAFF") || "#33AAFF";
           const polygon = event.overlay;
+
+          polygon.setOptions({
+            fillColor: color,
+            strokeColor: color
+          });
+
           polygon.setEditable(true);
 
           const polyData = {
             label,
+            color,
             polygon
           };
 
@@ -133,7 +160,7 @@
       let totalArea = 0;
       let totalGallons = 0;
 
-      polygons.forEach(({ label, polygon }, index) => {
+      polygons.forEach(({ label, color, polygon }, index) => {
         const path = polygon.getPath();
         const areaMeters = google.maps.geometry.spherical.computeArea(path);
         const areaFeet = areaMeters * 10.7639;
@@ -145,9 +172,13 @@
         const info = document.createElement("div");
         info.className = "polygon-info";
         info.innerHTML = `
-          <strong>${label}</strong><br>
-          Area: ${areaFeet.toFixed(2)} sq ft<br>
-          Potential Rainwater: ${gallons.toFixed(2)} gallons
+          <strong style="color:${color}">${label}</strong><br>
+          Area: ${formatNumber(Math.round(areaFeet))} sq ft<br>
+          Potential Rainwater: ${formatNumber(Math.round(gallons))} gallons
+          <div class="polygon-actions">
+            <button onclick="renamePolygon(${index})">✏️ Rename</button>
+            <button onclick="deletePolygon(${index})">🗑️ Delete</button>
+          </div>
         `;
         resultsContainer.appendChild(info);
       });
@@ -155,10 +186,28 @@
       const totalDiv = document.createElement("div");
       totalDiv.className = "total";
       totalDiv.innerHTML = `
-        Total Area: ${totalArea.toFixed(2)} sq ft<br>
-        Total Rainwater Harvesting Potential: ${totalGallons.toFixed(2)} gallons
+        Total Area: ${formatNumber(Math.round(totalArea))} sq ft<br>
+        Total Rainwater Harvesting Potential: ${formatNumber(Math.round(totalGallons))} gallons
       `;
       resultsContainer.appendChild(totalDiv);
+    }
+
+    function deletePolygon(index) {
+      polygons[index].polygon.setMap(null);
+      polygons.splice(index, 1);
+      updateResults();
+    }
+
+    function renamePolygon(index) {
+      const newLabel = prompt("Rename this polygon:", polygons[index].label);
+      if (newLabel) {
+        polygons[index].label = newLabel;
+        updateResults();
+      }
+    }
+
+    function formatNumber(num) {
+      return num.toLocaleString();
     }
   </script>
 
