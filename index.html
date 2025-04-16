@@ -1,44 +1,79 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Rainwater Harvesting Map</title>
-    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
-    <meta charset="utf-8">
+    <title>Rainwater Harvesting Calculator</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
-      html, body, #map {
-        height: 100%;
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
         margin: 0;
-        padding: 0;
       }
-      #totals {
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        background: rgba(255, 255, 255, 0.9);
-        padding: 10px;
-        border-radius: 8px;
-        font-family: sans-serif;
-        z-index: 1;
+      #map {
+        height: 500px;
+        width: 100%;
+        margin: 20px 0;
+      }
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+      .controls input, .controls select, .controls button {
+        padding: 8px;
+        font-size: 16px;
+      }
+      .results {
+        margin-top: 20px;
+      }
+      .results p {
+        margin: 5px 0;
       }
     </style>
   </head>
   <body>
-    <div id="totals"><strong>Rainfall Totals</strong><div id="results"></div></div>
+    <h2>Rainwater Harvesting Calculator</h2>
+
+    <div class="controls">
+      <input id="address" type="text" placeholder="Enter address" />
+      <input id="rainfall" type="number" placeholder="Annual Rainfall (inches)" />
+      <button id="calculate">Calculate</button>
+    </div>
+
     <div id="map"></div>
 
+    <div class="results" id="results"></div>
+
+    <script
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAuFONHLyXGalqEH9VL3oFl8MpHgF7sa5k&libraries=places,drawing&callback=initMap"
+      async
+      defer
+    ></script>
+
     <script>
-      let map;
-      let drawingManager;
+      let map, drawingManager;
       const polygons = [];
-      const RAINFALL_INCHES = 1;
-      const SQFT_PER_ACRE_IN_INCHES = 0.623;
+      let autocomplete;
 
       function initMap() {
         map = new google.maps.Map(document.getElementById("map"), {
-          center: { lat: 32.7157, lng: -117.1611 }, // San Diego
+          center: { lat: 32.7157, lng: -117.1611 },
           zoom: 16,
-          mapTypeId: 'hybrid',
-          tilt: 0
+          mapTypeId: "hybrid",
+          tilt: 0,
+        });
+
+        autocomplete = new google.maps.places.Autocomplete(
+          document.getElementById("address")
+        );
+        autocomplete.addListener("place_changed", () => {
+          const place = autocomplete.getPlace();
+          if (place.geometry) {
+            map.setCenter(place.geometry.location);
+            map.setZoom(18);
+          }
         });
 
         drawingManager = new google.maps.drawing.DrawingManager({
@@ -46,123 +81,98 @@
           drawingControl: true,
           drawingControlOptions: {
             position: google.maps.ControlPosition.TOP_CENTER,
-            drawingModes: [google.maps.drawing.OverlayType.POLYGON]
+            drawingModes: ["polygon"],
           },
           polygonOptions: {
             editable: true,
-            fillColor: '#33AAFF',
-            fillOpacity: 0.5,
-            strokeWeight: 2,
-            clickable: true,
-            zIndex: 1
-          }
+            draggable: false,
+            strokeColor: "#FF0000",
+            fillColor: "#FF0000",
+            fillOpacity: 0.35,
+          },
         });
         drawingManager.setMap(map);
 
-        google.maps.event.addListener(drawingManager, "overlaycomplete", async function (event) {
-          if (event.type === "polygon") {
-            const label = prompt("Label this polygon (e.g., Roof, Driveway):", "Unnamed Area") || "Unnamed Area";
+        google.maps.event.addListener(drawingManager, "overlaycomplete", function (event) {
+          const polygon = event.overlay;
+          polygon.type = "polygon";
+          polygon.label = prompt("Label this area (e.g., 'Roof', 'Driveway')") || "Unnamed";
+          polygon.color = getRandomColor();
+          polygon.setOptions({ fillColor: polygon.color, strokeColor: polygon.color });
 
-            const colorOptions = ["#33AAFF", "#55CC55", "#FF9933", "#AA66CC", "#996633"];
-            const color = await promptColor(colorOptions) || "#33AAFF";
+          const infoWindow = new google.maps.InfoWindow({
+            content: getPolygonInfoContent(polygon),
+            position: polygon.getPath().getAt(0),
+          });
 
-            const polygon = event.overlay;
-            polygon.setOptions({ fillColor: color, strokeColor: color });
-            polygon.setEditable(true);
+          polygon.addListener("click", () => {
+            infoWindow.setContent(getPolygonInfoContent(polygon));
+            infoWindow.setPosition(polygon.getPath().getAt(0));
+            infoWindow.open(map);
+          });
 
-            const polyData = { label, color, polygon };
-            polygons.push(polyData);
-
-            polygon.addListener("rightclick", () => {
-              if (confirm(`Delete polygon '${label}'?`)) {
-                polygon.setMap(null);
-                const index = polygons.indexOf(polyData);
-                if (index > -1) polygons.splice(index, 1);
-                updateResults();
-              }
-            });
-
-            polygon.addListener("click", () => {
-              const newLabel = prompt("Rename this area:", polyData.label);
-              if (newLabel) {
-                polyData.label = newLabel;
-                updateResults();
-              }
-            });
-
-            polygon.getPath().addListener("set_at", updateResults);
-            polygon.getPath().addListener("insert_at", updateResults);
-            updateResults();
-          }
+          polygons.push(polygon);
         });
+
+        document.getElementById("calculate").addEventListener("click", calculateRainwater);
       }
 
-      function computeArea(polygon) {
-        return google.maps.geometry.spherical.computeArea(polygon.getPath());
-      }
+      function calculateRainwater() {
+        const rainfall = parseFloat(document.getElementById("rainfall").value);
+        if (isNaN(rainfall) || rainfall <= 0) {
+          alert("Please enter a valid annual rainfall in inches.");
+          return;
+        }
 
-      function updateResults() {
-        const container = document.getElementById("results");
-        container.innerHTML = "";
-        polygons.forEach(({ label, polygon }) => {
-          const areaSqMeters = computeArea(polygon);
-          const areaSqFeet = areaSqMeters * 10.7639;
-          const gallons = areaSqFeet * SQFT_PER_ACRE_IN_INCHES * RAINFALL_INCHES;
-          const areaRounded = Math.round(areaSqFeet).toLocaleString();
-          const gallonsRounded = Math.round(gallons).toLocaleString();
-          const div = document.createElement("div");
-          div.innerHTML = `<strong>${label}</strong>: ${areaRounded} sq ft = ${gallonsRounded} gallons`;
-          container.appendChild(div);
+        let totalArea = 0;
+        let totalGallons = 0;
+        let output = "<h3>Results:</h3>";
+
+        polygons.forEach((poly, i) => {
+          const areaMeters = google.maps.geometry.spherical.computeArea(poly.getPath());
+          const areaFeet = areaMeters * 10.7639;
+          const gallons = areaFeet * 0.623 * rainfall;
+
+          totalArea += areaFeet;
+          totalGallons += gallons;
+
+          output += `<p><strong>${poly.label}</strong>: ${Math.round(areaFeet).toLocaleString()} sq ft – ${Math.round(gallons).toLocaleString()} gallons/year</p>`;
         });
+
+        output += `<p><strong>Total Area</strong>: ${Math.round(totalArea).toLocaleString()} sq ft</p>`;
+        output += `<p><strong>Total Potential Rainwater</strong>: ${Math.round(totalGallons).toLocaleString()} gallons/year</p>`;
+
+        document.getElementById("results").innerHTML = output;
       }
 
-      function promptColor(colors) {
-        const colorHTML = colors.map(c => `<span class="color-swatch" data-color="${c}" style="background-color:${c}"></span>`).join('');
-        const colorDiv = document.createElement("div");
-        colorDiv.innerHTML = `
-          <div style="padding:10px;font-family:sans-serif">
-            <strong>Select a color:</strong><br>
-            ${colorHTML}
+      function getPolygonInfoContent(polygon) {
+        return `
+          <div>
+            <strong>${polygon.label}</strong><br/>
+            <button onclick="renamePolygon(${polygons.indexOf(polygon)})">Rename</button>
+            <button onclick="deletePolygon(${polygons.indexOf(polygon)})">Delete</button>
           </div>
         `;
-        Object.assign(colorDiv.style, {
-          position: 'fixed',
-          top: '100px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          background: '#fff',
-          border: '1px solid #ccc',
-          borderRadius: '8px',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-          zIndex: 1000
-        });
+      }
 
-        document.body.appendChild(colorDiv);
+      function renamePolygon(index) {
+        const newLabel = prompt("Enter new label", polygons[index].label);
+        if (newLabel) {
+          polygons[index].label = newLabel;
+        }
+      }
 
-        return new Promise(resolve => {
-          colorDiv.querySelectorAll(".color-swatch").forEach(el => {
-            el.style.display = "inline-block";
-            el.style.width = "30px";
-            el.style.height = "30px";
-            el.style.margin = "5px";
-            el.style.cursor = "pointer";
-            el.style.borderRadius = "6px";
-            el.addEventListener("click", () => {
-              const selected = el.getAttribute("data-color");
-              document.body.removeChild(colorDiv);
-              resolve(selected);
-            });
-          });
-        });
+      function deletePolygon(index) {
+        polygons[index].setMap(null);
+        polygons.splice(index, 1);
+        calculateRainwater();
+      }
+
+      function getRandomColor() {
+        const colors = ["#FF5733", "#33C1FF", "#75FF33", "#FF33F6", "#FFC733"];
+        return colors[Math.floor(Math.random() * colors.length)];
       }
     </script>
-
-    <!-- Load Google Maps API -->
-    <script
-      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAuFONHLyXGalqEH9VL3oFl8MpHgF7sa5k&libraries=places,drawing,geometry&callback=initMap"
-      async
-      defer
-    ></script>
   </body>
 </html>
 
