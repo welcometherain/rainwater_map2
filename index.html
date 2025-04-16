@@ -132,6 +132,15 @@
           gestureHandling: 'auto', // Enable zoom with mouse wheel
         });
 
+        // Fix mouse scroll zoom
+        map.setOptions({
+          scrollwheel: true,
+          zoomControl: true,
+          zoomControlOptions: {
+            position: google.maps.ControlPosition.TOP_LEFT,
+          }
+        });
+
         autocomplete = new google.maps.places.Autocomplete(
           document.getElementById("address")
         );
