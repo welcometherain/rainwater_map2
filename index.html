@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Rainwater Harvesting App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+  <style>
+    #map {
+      height: 80vh;
+      width: 100%;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+    input {
+      padding: 8px;
+      width: 80%;
+      max-width: 400px;
+      font-size: 1em;
+    }
+  </style>
+</head>
+<body>
+  <h2>Rainwater Harvesting Map</h2>
+  <input id="address" type="text" placeholder="Enter an address" />
+  <div id="map"></div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Google Mutant plugin -->
+  <script src="https://unpkg.com/leaflet.gridlayer.googlemutant@0.11.2/Leaflet.GoogleMutant.js"></script>
+
+  <!-- Load Google Maps API -->
+  <script
+    src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places"
+    async
+    defer
+  ></script>
+
+  <script>
+    let map;
+
+    function initMap() {
+      map = L.map("map", {
+        center: [32.7157, -117.1611], // San Diego as default
+        zoom: 17,
+        maxZoom: 23
+      });
+
+      const googleLayer = L.gridLayer.googleMutant({
+        maxZoom: 23,
+        type: "satellite"
+      }).addTo(map);
+
+      const marker = L.marker(map.getCenter()).addTo(map);
+
+      const input = document.getElementById("address");
+      const autocomplete = new google.maps.places.Autocomplete(input);
+
+      autocomplete.addListener("place_changed", () => {
+        const place = autocomplete.getPlace();
+        if (!place.geometry) {
+          alert("No details available for input: '" + place.name + "'");
+          return;
+        }
+
+        const location = place.geometry.location;
+        const latlng = [location.lat(), location.lng()];
+
+        map.setView(latlng, 20);
+        marker.setLatLng(latlng);
+      });
+    }
+
+    window.initMap = initMap;
+
+    // Wait for Google Maps API to load before initializing
+    const googleCheck = setInterval(() => {
+      if (window.google && window.google.maps) {
+        clearInterval(googleCheck);
+        initMap();
+      }
+    }, 500);
+  </script>
+</body>
+</html>
