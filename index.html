@@ -1,128 +1,167 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <title>Rainwater Harvesting Calculator</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        margin: 0;
-        padding: 20px;
-      }
-      #map {
-        height: 500px;
-        width: 100%;
-        margin-top: 10px;
-        border: 2px solid #555;
-        border-radius: 8px;
-      }
-      .controls {
-        margin-bottom: 10px;
-      }
-      .controls input {
-        padding: 8px;
-        margin-right: 10px;
-        width: 250px;
-        max-width: 100%;
-      }
-      .controls button {
-        padding: 8px 16px;
-      }
-      .results {
-        margin-top: 10px;
-      }
-      .gm-control-active {
-        box-shadow: 0 0 10px rgba(0,0,0,0.3);
-        background-color: #fefefe;
-      }
-    </style>
-  </head>
-  <body>
-    <h2>Rainwater Harvesting Calculator</h2>
-    <div class="controls">
-      <input id="address" type="text" placeholder="Enter an address" />
-      <input id="rainfall" type="number" placeholder="Annual Rainfall (in inches)" />
-    </div>
-    <div id="map"></div>
-    <div class="results">
-      <p>Area (square feet): <span id="area">0</span></p>
-      <p>Potential Annual Rainwater Harvesting (gallons): <span id="gallons">0</span></p>
-    </div>
+<head>
+  <meta charset="utf-8" />
+  <title>Rainwater Harvesting Calculator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+    #map {
+      height: 500px;
+      width: 100%;
+      margin-top: 10px;
+      border: 2px solid #555;
+      border-radius: 8px;
+    }
+    .controls {
+      margin-bottom: 10px;
+    }
+    .controls input {
+      padding: 8px;
+      margin-right: 10px;
+      width: 250px;
+      max-width: 100%;
+    }
+    .results {
+      margin-top: 15px;
+      padding: 10px;
+      background: #f9f9f9;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    .polygon-info {
+      margin-bottom: 8px;
+    }
+    .total {
+      font-weight: bold;
+      border-top: 1px solid #ccc;
+      padding-top: 10px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Rainwater Harvesting Calculator</h2>
+  <div class="controls">
+    <input id="address" type="text" placeholder="Enter an address" />
+    <input id="rainfall" type="number" placeholder="Annual Rainfall (in inches)" />
+  </div>
+  <div id="map"></div>
+  <div class="results" id="results">
+    <p>No polygons drawn yet.</p>
+  </div>
 
-    <script>
-      let map;
-      let polygon;
+  <script>
+    let map;
+    let polygons = [];
 
-      function initMap() {
-        map = new google.maps.Map(document.getElementById("map"), {
-          center: { lat: 32.7157, lng: -117.1611 },
-          zoom: 16,
-          tilt: 0,
-          mapTypeId: "hybrid", // shows satellite with labels
-          mapTypeControl: false,
-          gestureHandling: "greedy"
-        });
+    function initMap() {
+      map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: 32.7157, lng: -117.1611 },
+        zoom: 16,
+        tilt: 0,
+        mapTypeId: "hybrid",
+        mapTypeControl: false,
+        gestureHandling: "greedy"
+      });
 
-        const autocomplete = new google.maps.places.Autocomplete(document.getElementById("address"));
-        autocomplete.addListener("place_changed", () => {
-          const place = autocomplete.getPlace();
-          if (place.geometry) {
-            map.setCenter(place.geometry.location);
-            map.setZoom(18);
-          }
-        });
-
-        const drawingManager = new google.maps.drawing.DrawingManager({
-          drawingMode: google.maps.drawing.OverlayType.POLYGON,
-          drawingControl: true,
-          drawingControlOptions: {
-            position: google.maps.ControlPosition.TOP_CENTER,
-            drawingModes: ["polygon"]
-          },
-          polygonOptions: {
-            fillColor: "#33AAFF",
-            fillOpacity: 0.4,
-            strokeColor: "#0077CC",
-            strokeWeight: 2,
-            clickable: true,
-            editable: true, // Make polygon editable after drawing
-            draggable: false,
-            zIndex: 1
-          }
-        });
-
-        drawingManager.setMap(map);
-
-        google.maps.event.addListener(drawingManager, "overlaycomplete", function (event) {
-          if (event.type === "polygon") {
-            if (polygon) {
-              polygon.setMap(null);
-            }
-            polygon = event.overlay;
-            polygon.setEditable(true); // Ensure it stays editable
-
-            calculateAreaAndGallons();
-            google.maps.event.addListener(polygon.getPath(), "set_at", calculateAreaAndGallons);
-            google.maps.event.addListener(polygon.getPath(), "insert_at", calculateAreaAndGallons);
-          }
-        });
-
-        document.getElementById("rainfall").addEventListener("input", calculateAreaAndGallons);
-
-        function calculateAreaAndGallons() {
-          if (!polygon) return;
-          const path = polygon.getPath();
-          const areaMeters = google.maps.geometry.spherical.computeArea(path);
-          const areaFeet = areaMeters * 10.7639;
-          document.getElementById("area").textContent = areaFeet.toFixed(2);
-
-          const rainfall = parseFloat(document.getElementById("rainfall").value || 0);
-          const gallons = areaFeet * 0.623 * rainfall;
-          document.getElementById("gallons").textContent = gallons.toFixed(2);
+      const autocomplete = new google.maps.places.Autocomplete(document.getElementById("address"));
+      autocomplete.addListener("place_changed", () => {
+        const place = autocomplete.getPlace();
+        if (place.geometry) {
+          map.setCenter(place.geometry.location);
+          map.setZoom(18);
         }
+      });
+
+      const drawingManager = new google.maps.drawing.DrawingManager({
+        drawingMode: google.maps.drawing.OverlayType.POLYGON,
+        drawingControl: true,
+        drawingControlOptions: {
+          position: google.maps.ControlPosition.TOP_CENTER,
+          drawingModes: ["polygon"]
+        },
+        polygonOptions: {
+          fillColor: "#33AAFF",
+          fillOpacity: 0.4,
+          strokeColor: "#0077CC",
+          strokeWeight: 2,
+          editable: true,
+          draggable: false,
+          zIndex: 1
+        }
+      });
+
+      drawingManager.setMap(map);
+
+      google.maps.event.addListener(drawingManager, "overlaycomplete", function (event) {
+        if (event.type === "polygon") {
+          const label = prompt("Label this polygon (e.g., Roof, Driveway):", "Unnamed Area") || "Unnamed Area";
+          const polygon = event.overlay;
+          polygon.setEditable(true);
+
+          const polyData = {
+            label,
+            polygon
+          };
+
+          polygons.push(polyData);
+
+          polygon.getPath().addListener("set_at", updateResults);
+          polygon.getPath().addListener("insert_at", updateResults);
+          updateResults();
+        }
+      });
+
+      document.getElementById("rainfall").addEventListener("input", updateResults);
+    }
+
+    function updateResults() {
+      const rainfall = parseFloat(document.getElementById("rainfall").value || 0);
+      const resultsContainer = document.getElementById("results");
+      resultsContainer.innerHTML = "";
+
+      if (polygons.length === 0) {
+        resultsContainer.innerHTML = "<p>No polygons drawn yet.</p>";
+        return;
       }
-    </script>
+
+      let totalArea = 0;
+      let totalGallons = 0;
+
+      polygons.forEach(({ label, polygon }, index) => {
+        const path = polygon.getPath();
+        const areaMeters = google.maps.geometry.spherical.computeArea(path);
+        const areaFeet = areaMeters * 10.7639;
+        const gallons = areaFeet * 0.623 * rainfall;
+
+        totalArea += areaFeet;
+        totalGallons += gallons;
+
+        const info = document.createElement("div");
+        info.className = "polygon-info";
+        info.innerHTML = `
+          <strong>${label}</strong><br>
+          Area: ${areaFeet.toFixed(2)} sq ft<br>
+          Potential Rainwater: ${gallons.toFixed(2)} gallons
+        `;
+        resultsContainer.appendChild(info);
+      });
+
+      const totalDiv = document.createElement("div");
+      totalDiv.className = "total";
+      totalDiv.innerHTML = `
+        Total Area: ${totalArea.toFixed(2)} sq ft<br>
+        Total Rainwater Harvesting Potential: ${totalGallons.toFixed(2)} gallons
+      `;
+      resultsContainer.appendChild(totalDiv);
+    }
+  </script>
+
 
     <!-- Load Google Maps API -->
     <script
