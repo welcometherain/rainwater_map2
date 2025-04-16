@@ -80,8 +80,9 @@
 
       function initMap() {
         map = new google.maps.Map(document.getElementById("map"), {
-          center: { lat: 32.7157, lng: -117.1611 },
-          zoom: 16,
+          // Set the map center to Southern California (Los Angeles area)
+          center: { lat: 34.0522, lng: -118.2437 }, // Los Angeles, CA
+          zoom: 8, // Adjusted zoom level to see a broader view of Southern California
           mapTypeId: "hybrid",
           tilt: 0,
         });
@@ -196,5 +197,4 @@
     </script>
   </body>
 </html>
-
 
