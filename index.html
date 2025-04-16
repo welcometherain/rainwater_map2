@@ -31,7 +31,7 @@
             font-size: 24px;
         }
         #directions p {
-            margin: 5px 0;
+            margin: 8px 0;
         }
         #controls {
             display: flex;
@@ -67,7 +67,7 @@
             width: 100%;
             display: flex;
             flex-wrap: wrap;
-            justify-content: space-around;
+            justify-content: flex-start;
         }
         .result-box {
             background-color: #fff;
@@ -97,7 +97,7 @@
         <p>1. Find your property using the address search box or scroll to your location on the map.</p>
         <p>2. Draw polygons on the map to represent areas for rainfall collection (e.g., roof, driveway, land).</p>
         <p>3. Label each polygon with a description (e.g., 'Roof', 'Driveway').</p>
-        <p>4. Edit polygon shape or name by using the 🖐️ tool and clicking on the polygon.</p>
+        <p>4. Edit polygon shape or name by using the <span style="font-size:1.2em;">🖐️</span> tool and clicking on the polygon.</p>
         <p>5. Enter annual rainfall in inches to calculate rainwater potential for each area.</p>
     </div>
 
@@ -125,6 +125,7 @@
             gestureHandling: 'greedy'
         });
 
+        // Address search
         const addressInput = document.getElementById('address');
         const autocomplete = new google.maps.places.Autocomplete(addressInput);
         autocomplete.bindTo('bounds', map);
@@ -135,6 +136,7 @@
             map.setZoom(16);
         });
 
+        // Drawing manager
         drawingManager = new google.maps.drawing.DrawingManager({
             drawingMode: google.maps.drawing.OverlayType.POLYGON,
             drawingControl: true,
@@ -156,20 +158,16 @@
             if (event.type === google.maps.drawing.OverlayType.POLYGON) {
                 const polygon = event.overlay;
                 polygon.setEditable(true);
-                const area = google.maps.geometry.spherical.computeArea(polygon.getPath());
-                let label = prompt("Label this area (e.g., Roof, Driveway):");
-                if (!label) label = 'Unnamed';
-                polygon.label = label;
+                polygon.label = prompt("Label this area (e.g., Roof, Driveway):") || 'Unnamed';
+                // store area in sq ft for later
+                const areaMeters = google.maps.geometry.spherical.computeArea(polygon.getPath());
+                const areaFeet = areaMeters * 10.7639;
+                polygons.push({ polygon, areaFeet });
 
-                polygons.push({ polygon, area, label });
-
+                // enable renaming on click
                 polygon.addListener('click', () => {
                     const newLabel = prompt('Rename this area:', polygon.label);
-                    if (newLabel) {
-                        polygon.label = newLabel;
-                        const entry = polygons.find(p => p.polygon === polygon);
-                        if (entry) entry.label = newLabel;
-                    }
+                    if (newLabel) polygon.label = newLabel;
                 });
             }
         });
@@ -187,16 +185,15 @@
         const resultsDiv = document.getElementById('rainfall-results');
         resultsDiv.innerHTML = '';
 
-        polygons.forEach(({ polygon, area, label }) => {
-            const areaSqFt = area * 10.7639;
-            const gallonsPerInch = areaSqFt * 0.623;
+        polygons.forEach(({ polygon, areaFeet }) => {
+            const gallonsPerInch = areaFeet * 0.623;
             const totalGallons = gallonsPerInch * rainfallVal;
 
             const box = document.createElement('div');
             box.className = 'result-box';
             box.innerHTML = `
-                <h3>${label}</h3>
-                <p>Area: ${Math.round(areaSqFt).toLocaleString()} sq ft</p>
+                <h3>${polygon.label}</h3>
+                <p>Area: ${Math.round(areaFeet).toLocaleString()} sq ft</p>
                 <p>Gallons per inch: ${Math.round(gallonsPerInch).toLocaleString()}</p>
                 <p>Gallons per year: ${Math.round(totalGallons).toLocaleString()}</p>
             `;
