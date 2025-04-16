@@ -21,9 +21,21 @@
         gap: 10px;
         align-items: center;
       }
-      .controls input, .controls select, .controls button {
+      .controls input,
+      .controls select,
+      .controls button {
         padding: 8px;
         font-size: 16px;
+      }
+      .color-picker {
+        display: flex;
+        gap: 10px;
+      }
+      .color-picker div {
+        width: 30px;
+        height: 30px;
+        cursor: pointer;
+        border-radius: 5px;
       }
       .results {
         margin-top: 20px;
@@ -42,6 +54,14 @@
       <button id="calculate">Calculate</button>
     </div>
 
+    <div class="color-picker">
+      <div style="background-color: #FF5733;" onclick="setPolygonColor('#FF5733')"></div>
+      <div style="background-color: #33C1FF;" onclick="setPolygonColor('#33C1FF')"></div>
+      <div style="background-color: #75FF33;" onclick="setPolygonColor('#75FF33')"></div>
+      <div style="background-color: #FF33F6;" onclick="setPolygonColor('#FF33F6')"></div>
+      <div style="background-color: #FFC733;" onclick="setPolygonColor('#FFC733')"></div>
+    </div>
+
     <div id="map"></div>
 
     <div class="results" id="results"></div>
@@ -55,6 +75,7 @@
     <script>
       let map, drawingManager;
       const polygons = [];
+      let selectedColor = '#FF5733'; // Default color
       let autocomplete;
 
       function initMap() {
@@ -86,8 +107,8 @@
           polygonOptions: {
             editable: true,
             draggable: false,
-            strokeColor: "#FF0000",
-            fillColor: "#FF0000",
+            strokeColor: selectedColor,
+            fillColor: selectedColor,
             fillOpacity: 0.35,
           },
         });
@@ -97,7 +118,7 @@
           const polygon = event.overlay;
           polygon.type = "polygon";
           polygon.label = prompt("Label this area (e.g., 'Roof', 'Driveway')") || "Unnamed";
-          polygon.color = getRandomColor();
+          polygon.color = selectedColor;
           polygon.setOptions({ fillColor: polygon.color, strokeColor: polygon.color });
 
           const infoWindow = new google.maps.InfoWindow({
@@ -168,11 +189,12 @@
         calculateRainwater();
       }
 
-      function getRandomColor() {
-        const colors = ["#FF5733", "#33C1FF", "#75FF33", "#FF33F6", "#FFC733"];
-        return colors[Math.floor(Math.random() * colors.length)];
+      function setPolygonColor(color) {
+        selectedColor = color;
+        alert(`Polygon color set to: ${color}`);
       }
     </script>
   </body>
 </html>
+
 
